@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quimica</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Pacifico&display=swap');
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1f2937;
+            overflow-x: hidden;
+            overflow-y: auto; 
+        }
+
+        .screen {
+            transition: opacity 0.5s ease-in-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; 
+            padding-top: 2rem;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-color: white;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 10;
+            position: relative;
+        }
+
+        /* TABLA PERIÓDICA */
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(32px, 1fr));
+            gap: 2px;
+            padding: 10px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .element {
+            aspect-ratio: 1/1;
+            border-width: 1px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            align-items: center;
+            padding: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+            position: relative;
+            user-select: none;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .element:hover {
+            transform: scale(1.5);
+            z-index: 50;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            filter: brightness(0.95);
+        }
+
+        .element small {
+            font-size: 0.5rem;
+            opacity: 0.8;
+            align-self: flex-start;
+            line-height: 1;
+        }
+        
+        .element strong {
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        /* Estados Correcto/Incorrecto */
+        .element.correct {
+            background-color: #22c55e !important;
+            color: white !important;
+            border-color: #15803d !important;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px #22c55e;
+            z-index: 10;
+        }
+
+        .element.wrong {
+            animation: shake 0.4s;
+            background-color: #ef4444 !important;
+            color: white !important;
+            border-color: #b91c1c !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px); }
+            60% { transform: translateX(4px); }
+        }
+
+        @keyframes fade-in-up {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-appear {
+            animation: fade-in-up 1.5s ease-out forwards;
+        }
+
+        .empty-cell {
+            pointer-events: none;
+            border: none;
+            background: transparent;
+        }
+        
+        .spacer-row {
+            grid-column: 1 / -1;
+            height: 30px;
+        }
+
+        /* Botones */
+        .btn-base {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+        .btn-base:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        
+        .btn-primary { background-color: #2563eb; color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+
+        .btn-secondary { background-color: #9ca3af; color: white; }
+        .btn-secondary:hover { background-color: #6b7280; }
+
+        /* Clases de colores dinámicos */
+        .type-alkali { background-color: #fca5a5; border-color: #ef4444; color: #7f1d1d; } 
+        .type-alkaline { background-color: #fdba74; border-color: #f97316; color: #7c2d12; }
+        .type-transition { background-color: #fde047; border-color: #eab308; color: #713f12; }
+        .type-metal { background-color: #86efac; border-color: #22c55e; color: #14532d; }
+        .type-nonmetal { background-color: #93c5fd; border-color: #3b82f6; color: #1e3a8a; }
+        .type-halogen { background-color: #67e8f9; border-color: #06b6d4; color: #164e63; }
+        .type-noble { background-color: #d8b4fe; border-color: #a855f7; color: #581c87; }
+        .type-lanthanide { background-color: #f9a8d4; border-color: #ec4899; color: #831843; }
+        .type-actinide { background-color: #e879f9; border-color: #d946ef; color: #701a75; }
+        .type-default { background-color: #e5e7eb; border-color: #d1d5db; color: #374151; }
+
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA 1: INTRODUCCIÓN -->
+    <div id="screen-intro" class="screen active !justify-center !pt-0">
+        <div class="text-center p-6 max-w-2xl animate-fade-in">
+            <h1 class="text-5xl font-bold mb-4 text-gray-800 tracking-tight" style="font-family: 'Pacifico', cursive;">¿Apoco si eres una picadora de colas?</h1>
+            <p class="text-xl text-gray-600 mb-6 italic">
+                "O eres una falsa que no sabeee.<br>
+            </p>
+            
+            <img src="pollo-feliz.webp" alt="Pollo Feliz" class="w-48 mx-auto mb-8 rounded-lg shadow-lg hover:rotate-6 transition-transform duration-300">
+
+            <div class="flex flex-col md:flex-row gap-6 justify-center items-center">
+                <button onclick="startGame()" class="btn-base btn-primary">
+                    ¡Obviooooo!
+                </button>
+                <button id="btn-deny" onclick="denyKnowledge()" class="btn-base btn-secondary">
+                    No soy
+                </button>
+            </div>
+            
+            <p id="msg-deny" class="hidden mt-6 text-orange-600 font-bold text-lg animate-bounce">
+                ¡Chismosa, tu me picas mi cola mia.
+            </p>
+        </div>
+    </div>
+
+    <!-- PANTALLA 2: TABLA PERIÓDICA -->
+    <div id="screen-game" class="screen">
+        <div class="w-full flex flex-col items-center p-2">
+            <div class="text-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Tabla Periódica</h2>
+                <p class="text-gray-600 text-sm">Sabes que buscar.</p>
+            </div>
+
+            <div class="w-full overflow-x-auto flex justify-center custom-scrollbar pb-20">
+                <div id="periodic-table" class="periodic-table">
+                    <!-- Los elementos se generan con JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 3: VIDEO (VICTORIA 1 - Na K Ra) -->
+    <div id="screen-video" class="screen !justify-center !pt-0">
+        <div class="text-center w-full max-w-4xl p-4">
+            <h2 class="text-4xl font-bold text-green-600 mb-6" style="font-family: 'Pacifico', cursive;">¡Yeiii si le sabes Chokis!</h2>
+            <div class="aspect-video w-full bg-gray-100 rounded-xl overflow-hidden shadow-2xl relative border-4 border-white">
+                <video 
+                    id="reward-video" 
+                    class="w-full h-full" 
+                    controls>
+                    <source src="mi-video.mp4" type="video/mp4">
+                    Tu navegador no soporta la reproducción de videos.
+                </video>
+            </div>
+            
+            <div id="final-message" class="opacity-0 mt-8">
+                <p class="text-3xl text-gray-800 font-serif italic text-pink-600">
+                    "Mi corazón es sólidamente tuyo" ❤️
+                </p>
+                <button onclick="location.reload()" class="mt-8 text-gray-500 hover:text-gray-900 font-bold uppercase tracking-wide text-sm">
+                    Volver al inicio
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 4: MENSAJE AMOR (VICTORIA 2 - CHOKIS) -->
+    <div id="screen-love" class="screen !justify-center !pt-0 bg-pink-50">
+        <div class="text-center p-6 max-w-2xl animate-fade-in">
+            <h1 class="text-5xl font-bold mb-6 text-pink-600" style="font-family: 'Pacifico', cursive;">¡Para ti!</h1>
+             <p class="text-3xl text-gray-800 mb-8 font-serif italic leading-relaxed">
+                "Eres mi reacción química favorita en todo el universo." <br>
+                <span class="text-pink-500 text-2xl not-italic mt-4 block">❤️ Te quiero mucho nani❤️</span>
+            </p>
+            <div class="text-7xl animate-bounce mt-8">
+                🥰 🍫
+            </div>
+            <button onclick="location.reload()" class="mt-16 text-pink-500 hover:text-pink-700 font-bold uppercase tracking-wide text-sm border-2 border-pink-200 px-8 py-3 rounded-full hover:bg-pink-100 transition shadow-sm">
+                Volver al inicio
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN DE OBJETIVOS
+        // Ruta 1: Na, K, Ra -> Lleva al Video
+        const targetsVideo = ['Na', 'K', 'Ra'];
+        
+        // Ruta 2: C, Ho, K, I, S -> Lleva al Mensaje de Amor
+        const targetsLove = ['C', 'Ho', 'K', 'I', 'S'];
+
+        // Combinamos todos para saber cuáles marcar en verde al hacer clic
+        // Usamos Set para evitar duplicados (como la 'K')
+        const allTargets = [...new Set([...targetsVideo, ...targetsLove])];
+
+        let found = [];
+        let gameActive = true;
+
+        function denyKnowledge() {
+            const btn = document.getElementById('btn-deny');
+            const msg = document.getElementById('msg-deny');
+            msg.classList.remove('hidden');
+            btn.innerText = "Bueno, sí sé...";
+            btn.classList.remove('btn-secondary');
+            btn.classList.add('btn-primary', 'bg-green-500');
+            btn.onclick = startGame;
+        }
+
+        const allElements = [
+            // P1
+            {n:1,s:'H',p:1,g:1},{n:2,s:'He',p:1,g:18},
+            // P2
+            {n:3,s:'Li',p:2,g:1},{n:4,s:'Be',p:2,g:2},{n:5,s:'B',p:2,g:13},{n:6,s:'C',p:2,g:14},{n:7,s:'N',p:2,g:15},{n:8,s:'O',p:2,g:16},{n:9,s:'F',p:2,g:17},{n:10,s:'Ne',p:2,g:18},
+            // P3
+            {n:11,s:'Na',p:3,g:1},{n:12,s:'Mg',p:3,g:2},{n:13,s:'Al',p:3,g:13},{n:14,s:'Si',p:3,g:14},{n:15,s:'P',p:3,g:15},{n:16,s:'S',p:3,g:16},{n:17,s:'Cl',p:3,g:17},{n:18,s:'Ar',p:3,g:18},
+            // P4
+            {n:19,s:'K',p:4,g:1},{n:20,s:'Ca',p:4,g:2},{n:21,s:'Sc',p:4,g:3},{n:22,s:'Ti',p:4,g:4},{n:23,s:'V',p:4,g:5},{n:24,s:'Cr',p:4,g:6},{n:25,s:'Mn',p:4,g:7},{n:26,s:'Fe',p:4,g:8},{n:27,s:'Co',p:4,g:9},{n:28,s:'Ni',p:4,g:10},{n:29,s:'Cu',p:4,g:11},{n:30,s:'Zn',p:4,g:12},{n:31,s:'Ga',p:4,g:13},{n:32,s:'Ge',p:4,g:14},{n:33,s:'As',p:4,g:15},{n:34,s:'Se',p:4,g:16},{n:35,s:'Br',p:4,g:17},{n:36,s:'Kr',p:4,g:18},
+            // P5
+            {n:37,s:'Rb',p:5,g:1},{n:38,s:'Sr',p:5,g:2},{n:39,s:'Y',p:5,g:3},{n:40,s:'Zr',p:5,g:4},{n:41,s:'Nb',p:5,g:5},{n:42,s:'Mo',p:5,g:6},{n:43,s:'Tc',p:5,g:7},{n:44,s:'Ru',p:5,g:8},{n:45,s:'Rh',p:5,g:9},{n:46,s:'Pd',p:5,g:10},{n:47,s:'Ag',p:5,g:11},{n:48,s:'Cd',p:5,g:12},{n:49,s:'In',p:5,g:13},{n:50,s:'Sn',p:5,g:14},{n:51,s:'Sb',p:5,g:15},{n:52,s:'Te',p:5,g:16},{n:53,s:'I',p:5,g:17},{n:54,s:'Xe',p:5,g:18},
+            // P6
+            {n:55,s:'Cs',p:6,g:1},{n:56,s:'Ba',p:6,g:2},{n:'57-71',s:'*',p:6,g:3, special:true},{n:72,s:'Hf',p:6,g:4},{n:73,s:'Ta',p:6,g:5},{n:74,s:'W',p:6,g:6},{n:75,s:'Re',p:6,g:7},{n:76,s:'Os',p:6,g:8},{n:77,s:'Ir',p:6,g:9},{n:78,s:'Pt',p:6,g:10},{n:79,s:'Au',p:6,g:11},{n:80,s:'Hg',p:6,g:12},{n:81,s:'Tl',p:6,g:13},{n:82,s:'Pb',p:6,g:14},{n:83,s:'Bi',p:6,g:15},{n:84,s:'Po',p:6,g:16},{n:85,s:'At',p:6,g:17},{n:86,s:'Rn',p:6,g:18},
+            // P7
+            {n:87,s:'Fr',p:7,g:1},{n:88,s:'Ra',p:7,g:2},{n:'89-103',s:'**',p:7,g:3, special:true},{n:104,s:'Rf',p:7,g:4},{n:105,s:'Db',p:7,g:5},{n:106,s:'Sg',p:7,g:6},{n:107,s:'Bh',p:7,g:7},{n:108,s:'Hs',p:7,g:8},{n:109,s:'Mt',p:7,g:9},{n:110,s:'Ds',p:7,g:10},{n:111,s:'Rg',p:7,g:11},{n:112,s:'Cn',p:7,g:12},{n:113,s:'Nh',p:7,g:13},{n:114,s:'Fl',p:7,g:14},{n:115,s:'Mc',p:7,g:15},{n:116,s:'Lv',p:7,g:16},{n:117,s:'Ts',p:7,g:17},{n:118,s:'Og',p:7,g:18},
+        ];
+
+        const fBlock = [
+            // Lantánidos
+            {n:57,s:'La',p:8,g:4},{n:58,s:'Ce',p:8,g:5},{n:59,s:'Pr',p:8,g:6},{n:60,s:'Nd',p:8,g:7},{n:61,s:'Pm',p:8,g:8},{n:62,s:'Sm',p:8,g:9},{n:63,s:'Eu',p:8,g:10},{n:64,s:'Gd',p:8,g:11},{n:65,s:'Tb',p:8,g:12},{n:66,s:'Dy',p:8,g:13},{n:67,s:'Ho',p:8,g:14},{n:68,s:'Er',p:8,g:15},{n:69,s:'Tm',p:8,g:16},{n:70,s:'Yb',p:8,g:17},{n:71,s:'Lu',p:8,g:18},
+            // Actínidos
+            {n:89,s:'Ac',p:9,g:4},{n:90,s:'Th',p:9,g:5},{n:91,s:'Pa',p:9,g:6},{n:92,s:'U',p:9,g:7},{n:93,s:'Np',p:9,g:8},{n:94,s:'Pu',p:9,g:9},{n:95,s:'Am',p:9,g:10},{n:96,s:'Cm',p:9,g:11},{n:97,s:'Bk',p:9,g:12},{n:98,s:'Cf',p:9,g:13},{n:99,s:'Es',p:9,g:14},{n:100,s:'Fm',p:9,g:15},{n:101,s:'Md',p:9,g:16},{n:102,s:'No',p:9,g:17},{n:103,s:'Lr',p:9,g:18}
+        ];
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function startGame() {
+            showScreen('screen-game');
+            buildTable();
+        }
+
+        function buildTable() {
+            const table = document.getElementById('periodic-table');
+            table.innerHTML = '';
+            let gridMap = {};
+
+            allElements.forEach(e => gridMap[`${e.p}-${e.g}`] = e);
+            fBlock.forEach(e => gridMap[`${e.p}-${e.g}`] = e);
+
+            try {
+                for (let p = 1; p <= 7; p++) { renderRow(p, table, gridMap); }
+                
+                const spacer = document.createElement('div');
+                spacer.className = 'spacer-row';
+                table.appendChild(spacer);
+
+                renderRow(8, table, gridMap);
+                renderRow(9, table, gridMap);
+                
+                console.log("Tabla construida con éxito.");
+            } catch(e) {
+                console.error("Error construyendo tabla:", e);
+            }
+        }
+
+        function renderRow(p, table, gridMap) {
+             for (let g = 1; g <= 18; g++) {
+                    const elData = gridMap[`${p}-${g}`];
+                    const cell = document.createElement('div');
+
+                    if (elData) {
+                        let colorClass = 'type-default';
+                        try {
+                            colorClass = getElementColorClass(elData);
+                        } catch(err) {
+                            console.error("Error en elemento", elData, err);
+                        }
+
+                        cell.className = `element shadow-sm ${colorClass}`;
+                        const nText = (elData.special || elData.n.toString().includes('-')) ? '' : elData.n;
+                        
+                        cell.innerHTML = `<small>${nText}</small><strong>${elData.s}</strong>`;
+                        
+                        if(elData.special) {
+                             cell.style.cursor = 'default';
+                        } else {
+                             cell.onclick = () => checkElement(elData.s, cell);
+                        }
+                    } else {
+                        cell.className = 'empty-cell';
+                    }
+                    
+                    if(p > 7 && g < 3) cell.className = 'empty-cell'; 
+                    
+                    table.appendChild(cell);
+                }
+        }
+
+        function getElementColorClass(e) {
+            if (!e) return 'type-default';
+            const { n, g, s, p = 0 } = e;
+            
+            if (s === '*') return 'type-lanthanide';
+            if (s === '**') return 'type-actinide';
+            if (['H','C','N','O','P','S','Se'].includes(s)) return 'type-nonmetal'; 
+            if (g === 18) return 'type-noble';
+            if (g === 17) return 'type-halogen';
+            if (g === 1) return 'type-alkali';
+            if (g === 2) return 'type-alkaline';
+            if (p === 8 || (n >= 57 && n <= 71)) return 'type-lanthanide';
+            if (p === 9 || (n >= 89 && n <= 103)) return 'type-actinide';
+            if (g >= 3 && g <= 12) return 'type-transition';
+            return 'type-metal'; 
+        }
+
+        function checkElement(symbol, elementDiv) {
+            if (!gameActive) return;
+            if (found.includes(symbol)) return;
+
+            // Verificar si el elemento pertenece a CUALQUIERA de las dos rutas
+            if (allTargets.includes(symbol)) {
+                elementDiv.classList.add('correct');
+                found.push(symbol);
+                checkWin();
+            } else {
+                elementDiv.classList.add('wrong');
+                setTimeout(() => elementDiv.classList.remove('wrong'), 500);
+            }
+        }
+
+        function checkWin() {
+            // Verificar si se completó la ruta VIDEO (Na, K, Ra)
+            const videoComplete = targetsVideo.every(t => found.includes(t));
+            
+            // Verificar si se completó la ruta AMOR (C, Ho, K, I, S)
+            const loveComplete = targetsLove.every(t => found.includes(t));
+
+            if (videoComplete) {
+                gameActive = false;
+                setTimeout(launchVideo, 800);
+                return;
+            }
+
+            if (loveComplete) {
+                gameActive = false;
+                setTimeout(launchLoveScreen, 800);
+                return;
+            }
+        }
+
+        function launchVideo() {
+            showScreen('screen-video');
+            const video = document.getElementById('reward-video');
+            const message = document.getElementById('final-message');
+            
+            video.onended = () => {
+                message.classList.add('animate-appear');
+                message.classList.remove('opacity-0');
+            };
+
+            video.play().catch(error => { console.log("Autoplay bloqueado"); });
+        }
+
+        function launchLoveScreen() {
+            showScreen('screen-love');
+        }
+    </script>
+</body>
+</html>
